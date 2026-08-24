@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -604,7 +605,6 @@
             MX: "Mexico", AR: "Argentina", CO: "Colombia", CL: "Chile", PE: "Peru", PL: "Poland", UA: "Ukraine", RO: "Romania", CZ: "Czech Republic", PH: "Philippines", ID: "Indonesia", TH: "Thailand", TW: "Taiwan", EG: "Egypt", NG: "Nigeria", KE: "Kenya"
         };
 
-        // Standard Default Country Timezone Offsets (UTC)
         const countryDefaultTimezoneMap = {
             US: ["-5", "-6", "-7", "-8", "-4"],
             GB: ["0", "+1", "1"],
@@ -1009,11 +1009,31 @@
             };
         }
         
+        // Schedule Checker: Converts current time to Bangladesh Time (Asia/Dhaka) for global uniformity
         function checkTaskTimeStatus(configObj) {
             if (!configObj || !configObj.startTime || !configObj.endTime) return true;
             try {
-                const now = new Date(); 
-                const current = now.getHours() * 60 + now.getMinutes();
+                const now = new Date();
+                
+                // Get current time in Bangladesh Timezone (Asia/Dhaka)
+                const bdFormatter = new Intl.DateTimeFormat('en-US', {
+                    timeZone: 'Asia/Dhaka',
+                    hour: 'numeric',
+                    minute: 'numeric',
+                    hour12: false
+                });
+                
+                const parts = bdFormatter.formatToParts(now);
+                let bdHour = 0, bdMinute = 0;
+                parts.forEach(p => {
+                    if (p.type === 'hour') bdHour = parseInt(p.value, 10);
+                    if (p.type === 'minute') bdMinute = parseInt(p.value, 10);
+                });
+                
+                if (bdHour === 24) bdHour = 0;
+
+                const current = bdHour * 60 + bdMinute;
+
                 const [sh, sm] = configObj.startTime.split(':').map(Number); 
                 const start = sh * 60 + sm;
                 const [eh, em] = configObj.endTime.split(':').map(Number); 
@@ -1027,13 +1047,13 @@
             } catch(e) { return true; }
         }
 
-        // Robust Strict VPN & Timezone Offset verification system
+        // Strict VPN & Timezone Offset verification system
         function verifyTaskGeoAndVPN(configObj) {
             if (!configObj) return true;
 
-            // 1. Check Schedule Range
+            // 1. Check Schedule Range (Calculated in Bangladesh Time UTC+6)
             if (!checkTaskTimeStatus(configObj)) {
-                showAlert(`This task is only active from ${configObj.startTime} to ${configObj.endTime}.`, null, false, true);
+                showAlert(`This task is only active from ${configObj.startTime} to ${configObj.endTime} (Bangladesh Time).`, null, false, true);
                 return false;
             }
 
@@ -1087,7 +1107,6 @@
                 }
 
                 if (reqOffsets.length > 0) {
-                    // Check if device matches ANY allowed offset for that country (allowing Daylight Saving tolerance like +10 vs +11)
                     const isDeviceOffsetValid = reqOffsets.some(off => Math.abs(off - deviceOffsetHours) < 1.1);
 
                     if (!isDeviceOffsetValid) {
