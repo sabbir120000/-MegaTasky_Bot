@@ -308,14 +308,12 @@
                     <div id="daily-tasks-header-text" class="text-[11px] text-indigo-700 font-medium mb-1 p-3 rounded-xl bg-indigo-50/50 border border-indigo-100/50 shadow-sm hidden"></div>
                     
                     <div class="flex flex-col space-y-3.5">
-                        <!-- Button 1: Earning reward (Glossy White Theme) -->
+                        <!-- Button 1: Earning reward -->
                         <div id="earning-reward-card" class="bg-white border border-slate-100 hover:border-indigo-300 rounded-3xl p-5 shadow-[0_4px_20px_-4px_rgba(99,102,241,0.08)] flex flex-col cursor-pointer transition-all active:scale-[0.98] group relative overflow-hidden">
-                            <!-- JS Will Render Dynamic InnerHTML -->
                         </div>
 
-                        <!-- Button 2: income pro (Luxury Dark Theme) -->
+                        <!-- Button 2: income pro -->
                         <div id="income-pro-card" class="bg-slate-900 border border-slate-800 hover:border-slate-750 rounded-3xl p-5 shadow-lg flex flex-col cursor-pointer transition-all active:scale-[0.98] group relative overflow-hidden">
-                            <!-- JS Will Render Dynamic InnerHTML -->
                         </div>
                     </div>
                     
@@ -594,9 +592,8 @@
         let activeTaskState = { isActive: false, task: null, timer: null, ticker: null, eventHandler: null, startTime: 0, timeLeft: 0 };
         let autoModeState = { isActive: false, task: null, timeoutId: null };
 
-        let userGeoData = { country_code: "Unknown", country_name: "Unknown", timezone: "Unknown", ip: "" };
+        let userGeoData = { country_code: "Unknown", country_name: "Unknown", timezone: "Unknown", ip: "", utc_offset: null };
 
-        // Updated Country Emoji Map with Expanded VPN Locations (Mexico, Argentina, Poland, Philippines, etc.)
         const countryEmojiMap = {
             US: "🇺🇸", GB: "🇬🇧", CA: "🇨🇦", DE: "🇩🇪", SG: "🇸🇬", AU: "🇦🇺", BD: "🇧🇩", IN: "🇮🇳", MY: "🇲🇾", AE: "🇦🇪", SA: "🇸🇦", FR: "🇫🇷", JP: "🇯🇵", NL: "🇳🇱", CH: "🇨🇭", HK: "🇭🇰", PK: "🇵🇰", TR: "🇹🇷", IT: "🇮🇹", ES: "🇪🇸", BR: "🇧🇷", ZA: "🇿🇦", KR: "🇰🇷", NO: "🇳🇴", SE: "🇸🇪", DK: "🇩🇰", FI: "🇫🇮", IE: "🇮🇪", NZ: "🇳🇿", VN: "🇻🇳",
             MX: "🇲🇽", AR: "🇦🇷", CO: "🇨🇴", CL: "🇨🇱", PE: "🇵🇪", PL: "🇵🇱", UA: "🇺🇦", RO: "🇷🇴", CZ: "🇨🇿", PH: "🇵🇭", ID: "🇮🇩", TH: "🇹🇭", TW: "🇹🇼", EG: "🇪🇬", NG: "🇳🇬", KE: "🇰🇪"
@@ -605,6 +602,42 @@
         const countryNameMap = {
             US: "United States", GB: "United Kingdom", CA: "Canada", DE: "Germany", SG: "Singapore", AU: "Australia", BD: "Bangladesh", IN: "India", MY: "Malaysia", AE: "United Arab Emirates", SA: "Saudi Arabia", FR: "France", JP: "Japan", NL: "Netherlands", CH: "Switzerland", HK: "Hong Kong", PK: "Pakistan", TR: "Turkey", IT: "Italy", ES: "Spain", BR: "Brazil", ZA: "South Africa", KR: "South Korea", NO: "Norway", SE: "Sweden", DK: "Denmark", FI: "Finland", IE: "Ireland", NZ: "New Zealand", VN: "Vietnam",
             MX: "Mexico", AR: "Argentina", CO: "Colombia", CL: "Chile", PE: "Peru", PL: "Poland", UA: "Ukraine", RO: "Romania", CZ: "Czech Republic", PH: "Philippines", ID: "Indonesia", TH: "Thailand", TW: "Taiwan", EG: "Egypt", NG: "Nigeria", KE: "Kenya"
+        };
+
+        // Standard Default Country Timezone Offsets (UTC)
+        const countryDefaultTimezoneMap = {
+            US: ["-5", "-6", "-7", "-8", "-4"],
+            GB: ["0", "+1", "1"],
+            CA: ["-4", "-5", "-6", "-7", "-8"],
+            MX: ["-6", "-5", "-7"],
+            DE: ["+1", "+2", "1", "2"],
+            SG: ["+8", "8"],
+            AU: ["+10", "+8", "+9.5", "+10.5", "+11", "10"],
+            BD: ["+6", "6"],
+            IN: ["+5.5", "5.5"],
+            MY: ["+8", "8"],
+            AE: ["+4", "4"],
+            SA: ["+3", "3"],
+            FR: ["+1", "+2", "1", "2"],
+            JP: ["+9", "9"],
+            NL: ["+1", "+2", "1", "2"],
+            CH: ["+1", "+2", "1", "2"],
+            HK: ["+8", "8"],
+            PK: ["+5", "5"],
+            TR: ["+3", "3"],
+            IT: ["+1", "+2", "1", "2"],
+            ES: ["+1", "+2", "1", "2"],
+            BR: ["-3", "-4", "-5"],
+            ZA: ["+2", "2"],
+            KR: ["+9", "9"],
+            NO: ["+1", "+2", "1", "2"],
+            SE: ["+1", "+2", "1", "2"],
+            DK: ["+1", "+2", "1", "2"],
+            FI: ["+2", "+3", "2", "3"],
+            IE: ["0", "+1", "1"],
+            NZ: ["+12", "+13", "12", "13"],
+            VN: ["+7", "7"],
+            AR: ["-3"], CO: ["-5"], CL: ["-3", "-4"], PE: ["-5"], PL: ["+1", "+2"], UA: ["+2", "+3"], RO: ["+2", "+3"], CZ: ["+1", "+2"], PH: ["+8"], ID: ["+7", "+8", "+9"], TH: ["+7"], TW: ["+8"], EG: ["+2", "+3"], NG: ["+1"], KE: ["+3"]
         };
 
         async function detectUserGeo() {
@@ -619,12 +652,13 @@
                             country_code: data.country_code.toUpperCase(),
                             country_name: data.country || "Unknown",
                             timezone: (data.timezone && data.timezone.id) ? data.timezone.id : Intl.DateTimeFormat().resolvedOptions().timeZone,
+                            utc_offset: data.timezone ? (data.timezone.offset / 3600) : null,
                             ip: data.ip || ""
                         };
                         detected = true;
                     }
                 }
-            } catch (e) { console.warn("Primary Geolocation API failed, trying country.is..."); }
+            } catch (e) { console.warn("Primary Geolocation API failed..."); }
 
             if (!detected) {
                 try {
@@ -636,34 +670,18 @@
                                 country_code: data.country.toUpperCase(),
                                 country_name: countryNameMap[data.country.toUpperCase()] || "Unknown",
                                 timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+                                utc_offset: -new Date().getTimezoneOffset() / 60,
                                 ip: data.ip || ""
                             };
                             detected = true;
                         }
                     }
-                } catch (e) { console.warn("country.is Geolocation API failed, trying freeipapi..."); }
-            }
-
-            if (!detected) {
-                try {
-                    const res = await fetch('https://freeipapi.com/api/json');
-                    if (res.ok) {
-                        const data = await res.json();
-                        if (data && data.countryCode) {
-                            userGeoData = {
-                                country_code: data.countryCode.toUpperCase(),
-                                country_name: data.countryName || "Unknown",
-                                timezone: data.timeZone || Intl.DateTimeFormat().resolvedOptions().timeZone,
-                                ip: data.ipAddress || ""
-                            };
-                            detected = true;
-                        }
-                    }
-                } catch (e) { console.warn("freeipapi Geolocation failed. Using local fallback."); }
+                } catch (e) {}
             }
 
             if (!detected) {
                 userGeoData.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+                userGeoData.utc_offset = -new Date().getTimezoneOffset() / 60;
                 const tz = userGeoData.timezone.toLowerCase();
                 if (tz.includes("dhaka")) {
                     userGeoData.country_code = "BD";
@@ -680,20 +698,6 @@
                 } else {
                     userGeoData.country_code = "US"; 
                     userGeoData.country_name = "United States";
-                }
-            }
-
-            if (userGeoData.timezone) {
-                const tz = userGeoData.timezone.toLowerCase();
-                if (tz.includes("hong_kong")) {
-                    userGeoData.country_code = "HK";
-                    userGeoData.country_name = "Hong Kong";
-                } else if (tz.includes("ho_chi_minh") || tz.includes("saigon") || tz.includes("hanoi")) {
-                    userGeoData.country_code = "VN";
-                    userGeoData.country_name = "Vietnam";
-                } else if (tz.includes("mexico")) {
-                    userGeoData.country_code = "MX";
-                    userGeoData.country_name = "Mexico";
                 }
             }
         }
@@ -1023,18 +1027,27 @@
             } catch(e) { return true; }
         }
 
+        // Strict VPN & Timezone Offset verification system
         function verifyTaskGeoAndVPN(configObj) {
             if (!configObj) return true;
 
+            // 1. Check Schedule Range
             if (!checkTaskTimeStatus(configObj)) {
                 showAlert(`This task is only active from ${configObj.startTime} to ${configObj.endTime}.`, null, false, true);
                 return false;
             }
 
+            // 2. Check VPN Country and Timezone
             if (configObj.allowedCountries && configObj.allowedCountries.length > 0) {
                 const allowed = configObj.allowedCountries.map(c => c.trim().toUpperCase());
                 const userCountry = (userGeoData.country_code || "").trim().toUpperCase();
 
+                // Device UTC Offset
+                const deviceOffsetMin = -new Date().getTimezoneOffset();
+                const deviceOffsetHours = deviceOffsetMin / 60;
+                const deviceOffsetFormatted = (deviceOffsetHours >= 0 ? "+" : "") + deviceOffsetHours;
+
+                // A. Country Check
                 if (!allowed.includes(userCountry)) {
                     const userEmoji = countryEmojiMap[userCountry] || "🏳️";
                     const userCountryLabel = `${userEmoji} ${countryNameMap[userCountry] || userCountry || "Unknown"}`;
@@ -1053,6 +1066,36 @@
                     
                     showAlert(customMsg, null, false, true);
                     return false;
+                }
+
+                // B. Timezone Offset Verification (Checking if device timezone matches target country UTC)
+                const countryTimezoneMap = configObj.countryTimezoneMap || {};
+                let reqOffsets = [];
+
+                if (countryTimezoneMap[userCountry]) {
+                    reqOffsets = [parseFloat(countryTimezoneMap[userCountry])];
+                } else if (countryDefaultTimezoneMap[userCountry]) {
+                    reqOffsets = countryDefaultTimezoneMap[userCountry].map(parseFloat);
+                }
+
+                if (reqOffsets.length > 0) {
+                    const isDeviceOffsetValid = reqOffsets.includes(deviceOffsetHours);
+                    const isIpOffsetValid = userGeoData.utc_offset !== null ? reqOffsets.includes(parseFloat(userGeoData.utc_offset)) : true;
+
+                    if (!isDeviceOffsetValid || !isIpOffsetValid) {
+                        const expectedStr = countryTimezoneMap[userCountry] || reqOffsets.map(o => (o >= 0 ? "+" : "") + o).join(" / ");
+                        const customMsg = `🛑 TIMEZONE MISMATCH / টাইমজোন মিলেনি 🛑\n\n` +
+                          `আপনার ডিভাইসের টাইমজোন সঠিকভাবে সেট করা নেই!\n\n` +
+                          `📍 আপনার বর্তমান ডিভাইসের টাইমজোন: UTC ${deviceOffsetFormatted}\n` +
+                          `✅ প্রয়োজনীয় টাইমজোন (${countryNameMap[userCountry] || userCountry}): UTC ${expectedStr}\n\n` +
+                          `👉 What to do / করণীয়:\n` +
+                          `১. ফোনের সেটিংসে (Settings) যান -> Date & Time তে ঢুকুন।\n` +
+                          `২. Time Zone অটোমেটিক বন্ধ করে ${countryNameMap[userCountry] || userCountry} (UTC ${expectedStr}) সিলেক্ট করুন।\n` +
+                          `৩. টাইমজোন পরিবর্তন করার পর পুনরায় অ্যাপে এসে স্টার্ট করুন।`;
+                        
+                        showAlert(customMsg, null, false, true);
+                        return false;
+                    }
                 }
             }
 
@@ -1434,7 +1477,7 @@
 
                 await updateDoc(doc(db, "users", currentUser.uid), updates);
 
-                // REALTIME GEO AD LOG LOGGING FOR ADMIN PANEL
+                // Realtime Log to Firebase for Admin Analytics
                 if (completedTask.action === 'ad' || completedTask.type === 'daily') {
                     try {
                         let taskTitle = completedTask.id === 'video' ? 'Income Pro (GigaPub)' : (completedTask.id === 'interstitial' ? 'Earning Reward (Monetag)' : completedTask.id);
