@@ -1027,7 +1027,7 @@
             } catch(e) { return true; }
         }
 
-        // Strict VPN & Timezone Offset verification system
+        // Robust Strict VPN & Timezone Offset verification system
         function verifyTaskGeoAndVPN(configObj) {
             if (!configObj) return true;
 
@@ -1042,7 +1042,7 @@
                 const allowed = configObj.allowedCountries.map(c => c.trim().toUpperCase());
                 const userCountry = (userGeoData.country_code || "").trim().toUpperCase();
 
-                // Device UTC Offset
+                // Device UTC Offset in Hours
                 const deviceOffsetMin = -new Date().getTimezoneOffset();
                 const deviceOffsetHours = deviceOffsetMin / 60;
                 const deviceOffsetFormatted = (deviceOffsetHours >= 0 ? "+" : "") + deviceOffsetHours;
@@ -1068,21 +1068,29 @@
                     return false;
                 }
 
-                // B. Timezone Offset Verification (Checking if device timezone matches target country UTC)
+                // B. Timezone Offset Verification
                 const countryTimezoneMap = configObj.countryTimezoneMap || {};
                 let reqOffsets = [];
 
                 if (countryTimezoneMap[userCountry]) {
-                    reqOffsets = [parseFloat(countryTimezoneMap[userCountry])];
-                } else if (countryDefaultTimezoneMap[userCountry]) {
-                    reqOffsets = countryDefaultTimezoneMap[userCountry].map(parseFloat);
+                    const parsed = parseFloat(countryTimezoneMap[userCountry]);
+                    if (!isNaN(parsed)) reqOffsets.push(parsed);
+                } 
+                
+                if (countryDefaultTimezoneMap[userCountry]) {
+                    countryDefaultTimezoneMap[userCountry].forEach(tz => {
+                        const parsed = parseFloat(tz);
+                        if (!isNaN(parsed) && !reqOffsets.includes(parsed)) {
+                            reqOffsets.push(parsed);
+                        }
+                    });
                 }
 
                 if (reqOffsets.length > 0) {
-                    const isDeviceOffsetValid = reqOffsets.includes(deviceOffsetHours);
-                    const isIpOffsetValid = userGeoData.utc_offset !== null ? reqOffsets.includes(parseFloat(userGeoData.utc_offset)) : true;
+                    // Check if device matches ANY allowed offset for that country (allowing Daylight Saving tolerance like +10 vs +11)
+                    const isDeviceOffsetValid = reqOffsets.some(off => Math.abs(off - deviceOffsetHours) < 1.1);
 
-                    if (!isDeviceOffsetValid || !isIpOffsetValid) {
+                    if (!isDeviceOffsetValid) {
                         const expectedStr = countryTimezoneMap[userCountry] || reqOffsets.map(o => (o >= 0 ? "+" : "") + o).join(" / ");
                         const customMsg = `🛑 TIMEZONE MISMATCH / টাইমজোন মিলেনি 🛑\n\n` +
                           `আপনার ডিভাইসের টাইমজোন সঠিকভাবে সেট করা নেই!\n\n` +
